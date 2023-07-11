@@ -1,6 +1,7 @@
 # UPAMNet
 This is the official version of paper **"UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy"**--[[paper]](https://www.techrxiv.org/articles/preprint/UPAMNet_A_Unified_Network_with_Deep_Knowledge_Priors_for_Photoacoustic_Microscopy/23616693)
-![Overview](https://github.com/Lrnyux/UPAMNet/assets/86871168/f6f1ee3f-195a-4409-9c70-4264af2abf53)
+![network-v4](https://github.com/Lrnyux/UPAMNet/assets/86871168/53b0a51e-4949-47fb-9cf8-a9e215514a55)
+
 
 
 ## Related Datasets
