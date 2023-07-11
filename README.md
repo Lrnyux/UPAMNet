@@ -13,7 +13,7 @@ Due to data licence, related datasets can be downloaded from the following three
 Please cite our work if you find this work useful for your research.
 ```latex
 @article{Liuupamnet2023,
-author = {Yuxuan Liu and Jiasheng Zhou and Yating Luo and Jinkai Li and Sung-Liang Chen and Yao Guo and Guang-Zhong Yang},
+author = {Yuxuan Liu, Jiasheng Zhou, Yating Luo, Jinkai Li, Sung-Liang Chen, Yao Guo and Guang-Zhong Yang},
 title = {UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy},
 year = {2023},
 month = {7},
