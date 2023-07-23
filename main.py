@@ -129,8 +129,11 @@ class PA_dataset(Dataset):
         if self.args.fill_type == 'bic':
             down = np.array(Image.open(file_root).resize((w // s, h // s), Image.Resampling.BICUBIC))
             target = np.array(Image.open(file_root).resize((w // s, h // s), Image.Resampling.BICUBIC).resize((w , h ), Image.Resampling.BICUBIC))
-        else :
-            down = np.array(Image.open(file_root).resize((w // s, h // s), Image.Resampling.BICUBIC))
+        if self.args.fill_type == 'bilinear':
+            down = np.array(Image.open(file_root).resize((w // s, h // s), Image.Resampling.BILINEAR))
+            target = np.array(Image.open(file_root).resize((w // s, h // s), Image.Resampling.BILINEAR).resize((w , h ), Image.Resampling.BICUBIC))
+        if self.args.fill_type == 'equal_inter':
+            down = np.array(Image.open(file_root))[::s,::s]
             target = np.zeros((h,w))
             target[::s,::s] = down
 
