@@ -10,9 +10,8 @@ import math
 import torch.nn.functional as F
 import torch
 import lpips
+
 # Generallly a refers to prediction and b refers to groundtruth
-
-
 def calc_rmse(a, b, minmax=np.array([0,1])):
 
     a = a * (minmax[1] - minmax[0]) + minmax[0]
