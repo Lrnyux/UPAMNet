@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from inspect import isfunction
-
+import numpy as np
 
 class APReLU(nn.Module):
     def __init__(self, in_channels):
