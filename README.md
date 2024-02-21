@@ -1,5 +1,5 @@
 # UPAMNet
-This is the official version of paper **"UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy"**--[[paper]](https://www.techrxiv.org/articles/preprint/UPAMNet_A_Unified_Network_with_Deep_Knowledge_Priors_for_Photoacoustic_Microscopy/23616693)
+This is the official version of paper **"UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy"**--[[paper]](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4713099)
 ![network-v4](https://github.com/Lrnyux/UPAMNet/assets/86871168/53b0a51e-4949-47fb-9cf8-a9e215514a55)
 
 
@@ -16,10 +16,10 @@ Please cite our work if you find this work useful for your research.
 @article{Liuupamnet2023,
 author = {Yuxuan Liu, Jiasheng Zhou, Yating Luo, Jinkai Li, Sung-Liang Chen, Yao Guo and Guang-Zhong Yang},
 title = {UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy},
-year = {2023},
-month = {7},
-url = {https://www.techrxiv.org/articles/preprint/UPAMNet_A_Unified_Network_with_Deep_Knowledge_Priors_for_Photoacoustic_Microscopy/23616693},
-doi = {10.36227/techrxiv.23616693.v1},
+year = {},
+month = {},
+url = {https://ssrn.com/abstract=4713099 },
+doi = {http://dx.doi.org/10.2139/ssrn.4713099},
  } 
   
 ```
