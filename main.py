@@ -37,20 +37,6 @@ def get_args():
     parser.add_argument('--task',type=str,default='SR',choices=['SR','Denoise'])
     parser.add_argument('--dataset_type', type=str, default='syn', choices=['syn'])
 
-
-
-    # =========for SR dataset============
-    parser.add_argument('--scale', type=int, default=4)
-    parser.add_argument('--fill_type',type=str,default='bic', choices=['bic', 'empty'])
-    parser.add_argument('--train_data_root', type=str,
-                        default='')
-    parser.add_argument('--val_data_root', type=str, default='')
-    parser.add_argument('--test_data_root', type=str, default='')
-
-    parser.add_argument('--train_data_meta_root', type=str,
-                        default='')
-    parser.add_argument('--val_data_meta_root', type=str, default='')
-    parser.add_argument('--test_data_meta_root', type=str, default='')
     # =========for training===========
 
     parser.add_argument('--train_batchsize', type=int, default=32)
@@ -106,11 +92,12 @@ def train():
     dst_root = os.path.abspath(__file__)
     create_code_snapshot(dst_root, save_code_root)
     # dataset============================================================
-    train_set = PA_dataset(args.train_data_root,args.train_data_meta_root,args,stage='Train')
+    # Place your PAM dataset here
+    train_set = PA_dataset()
     train_dataloader = DataLoader(train_set,batch_size=args.train_batchsize,shuffle=True,num_workers=16,drop_last=True)
-    val_set = PA_dataset(args.val_data_root,args.val_data_meta_root, args, stage='Val')
+    val_set = PA_dataset()
     val_dataloader = DataLoader(val_set, batch_size=args.val_batchsize, shuffle=False, num_workers=16, drop_last=False)
-    test_set = PA_dataset(args.test_data_root,args.test_data_meta_root, args, stage='Test')
+    test_set = PA_dataset()
     test_dataloader = DataLoader(test_set, batch_size=args.val_batchsize, shuffle=False, num_workers=16, drop_last=False)
     LOGGER.info('Initial Dataset Finished')
     #====================================================================
@@ -300,7 +287,8 @@ def test(checkpoint=''):
     logdir = LOGGER.getLogFolder()
     LOGGER.info(args)
     # dataset============================================================
-    test_set = PA_dataset(args.test_data_root,args.test_data_meta_root,args,stage='Test')
+    # Place your PAM dataset here
+    test_set = PA_dataset()
     test_dataloader = DataLoader(test_set, batch_size=args.val_batchsize, shuffle=False, num_workers=16, drop_last=False)
     LOGGER.info('Initial Dataset Finished')
     # ====================================================================
@@ -358,99 +346,6 @@ def test(checkpoint=''):
 
 
 
-def test_single_image(checkpoint=''):
-
-    def save_results_color(gt, pred, down, save_root_prefix, minmax=[0, 1], gray=1):
-        import matplotlib.pyplot as plt
-        image_pred = pred * (minmax[1] - minmax[0]) + minmax[0]
-        image_pred[image_pred < 0] = 0
-        # image_pred = np.log(255 * (image_pred/np.max(image_pred)))
-        # image_pred[image_pred > 255] = 255
-        image_gt = gt * (minmax[1] - minmax[0]) + minmax[0]
-        image_gt[image_gt < 0] = 0
-        # image_gt[image_gt>255]=255
-        image_down = down * (minmax[1] - minmax[0]) + minmax[0]
-        image_down[image_down < 0] = 0
-        # image_down[image_down > 255] = 255
-        if gray == 1:
-            image_pred = np.array(image_pred, dtype=np.uint8)
-            image_pred = Image.fromarray(image_pred)
-            image_pred.save(save_root_prefix + '_pred.png')
-
-            image_gt = np.array(image_gt, dtype=np.uint8)
-            image_gt = Image.fromarray(image_gt)
-            image_gt.save(save_root_prefix + '_gt.png')
-
-            image_down = np.array(image_down, dtype=np.uint8)
-            image_down = Image.fromarray(image_down)
-            image_down.save(save_root_prefix + '_bi.png')
-
-        if gray == 0:
-            image_pred = np.array(image_pred, dtype=np.float64)
-            plt.imsave(save_root_prefix + '_pred.png', image_pred, cmap='hot')
-
-            image_gt = np.array(image_gt, dtype=np.float64)
-            plt.imsave(save_root_prefix + '_gt.png', image_gt, cmap='hot')
-
-            image_down = np.array(image_down, dtype=np.float64)
-            plt.imsave(save_root_prefix + '_bi.png', image_down, cmap='hot')
-
-    args = get_args()
-    if checkpoint:
-        args.load_model = checkpoint
-    LOGGER = ConsoleLogger(args.trial, 'test')
-    logdir = LOGGER.getLogFolder()
-    LOGGER.info(args)
-
-    # ====================================================================
-    # prepare for dataset
-    img_folder = ''
-    img_listdir = sorted(os.listdir(img_folder))
-    img_root_list = []
-    for idx in range(len(img_listdir)):
-        img_root_list.append(os.path.join(img_folder,img_listdir[idx]))
-
-    # model
-    model = UPAMNet(inner_channel=args.inner_channel, norm_groups=args.norm_groups,
-                             channel_mults=args.channel_mults, attn_res=args.attn_res, res_blocks=args.res_blocks)
-    LOGGER.info('Initial Model Finished')
-    device = torch.device(f'cuda:{args.gpu}')
-    model = model.cuda(device)
-
-    if args.load_model:
-        model_path = args.load_model
-        if not os.path.isfile(model_path):
-            raise FileNotFoundError(f"No checkpoint found at {model_path}")
-        checkpoint = torch.load(model_path)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        LOGGER.info(f'---------------Finishing loading models----------------')
-    with torch.no_grad():
-        model.eval()
-        for idx in tqdm(range(len(img_root_list))):
-            img_root = img_root_list[idx]
-            img_info = np.array(Image.open(img_root))
-            h,w = img_info.shape
-            img_s = np.max([h,w])
-            interval = 32
-            scale = 1
-            if img_s % interval == 0:
-                img_info = np.array(Image.open(img_root).resize((img_s*scale,img_s*scale),Image.Resampling.BICUBIC))
-            else :
-                img_s = ((img_s // interval) + 1) * interval
-                img_info = np.array(Image.open(img_root).resize((img_s*scale,img_s*scale),Image.Resampling.BICUBIC))
-
-            d_min = np.min(img_info)
-            d_max = np.max(img_info)
-            img_info = (img_info - d_min)/(d_max-d_min)
-            img_info = img_info.reshape(1,img_s*scale,img_s*scale)
-            img_info = np.transpose(img_info,[2,0,1])
-            input = torch.Tensor(img_info).to(torch.float32).cuda(device)
-            input = input.view(1,1,img_s*scale,img_s*scale)
-            output = input + model(input)
-            save_root = os.path.join(logdir, str(idx).zfill(5))
-            save_results_color(output[0,0].cpu().numpy(),output[0,0].cpu().numpy(),input[0,0].cpu().numpy(),save_root, np.array([d_min,d_max]), 0)
-        LOGGER.info('Fininshing.')
-
 
 
 if __name__ == "__main__":
@@ -460,8 +355,6 @@ if __name__ == "__main__":
         train()
     if args.mode == 'test':
         test()
-    if args.mode == 'test_offline':
-        test_single_image(checkpoint='')
 
 
 #
