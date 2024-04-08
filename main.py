@@ -103,7 +103,6 @@ def train():
     #====================================================================
 
     # model
-    # model = unet()
     model = UPAMNet(inner_channel=args.inner_channel,norm_groups=args.norm_groups,channel_mults=args.channel_mults,attn_res=args.attn_res,res_blocks=args.res_blocks)
     device = torch.device(f'cuda:{args.gpu}')
     model = model.cuda(device)
