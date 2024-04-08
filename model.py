@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from inspect import isfunction
-import numpy as np
+
 
 class APReLU(nn.Module):
     def __init__(self, in_channels):
@@ -228,6 +228,104 @@ class PositionAttention(nn.Module):
         out = self.sigmoid(out)
         return x * out
 
+
+
+class UPAMNet(nn.Module):
+    def __init__(
+            self,
+            in_channel=1,
+            out_channel=1,
+            inner_channel=16,
+            norm_groups=16,
+            channel_mults=(1, 2, 4, 8),
+            attn_res=[16,32,64,128],
+            res_blocks=1,
+            dropout=0.1,
+            image_size=256
+    ):
+        super().__init__()
+
+        kernel_size = 3
+        num_mults = len(channel_mults)
+        pre_channel = inner_channel
+        feat_channels = [pre_channel]
+        now_res = image_size
+        downs = [nn.Conv2d(in_channel, inner_channel,
+                           kernel_size=3, padding=1)]
+
+
+        self.res_blocks = res_blocks
+
+        for ind in range(num_mults):
+            is_last = (ind == num_mults - 1)
+            use_attn = (now_res in attn_res)
+            channel_mult = inner_channel * channel_mults[ind]
+            for res_idx in range(0, res_blocks):
+                downs.append(ResnetBlocWithAttn(
+                    pre_channel, channel_mult, norm_groups=norm_groups,
+                    dropout=dropout, with_attn=use_attn))
+                feat_channels.append(channel_mult)
+                pre_channel = channel_mult
+            if not is_last:
+                downs.append(OrientationAttention(dim=pre_channel))
+                downs.append(Downsample(pre_channel))
+
+
+                feat_channels.append(pre_channel)
+
+        self.downs = nn.ModuleList(downs)
+        self.mid = nn.ModuleList([
+            ResnetBlocWithAttn(pre_channel, pre_channel,
+                               norm_groups=norm_groups,
+                               dropout=dropout, with_attn=True),
+            ResnetBlocWithAttn(pre_channel, pre_channel,
+                               norm_groups=norm_groups,
+                               dropout=dropout, with_attn=False)
+        ])
+        ups = []
+        for ind in reversed(range(num_mults)):
+            is_last = (ind < 1)
+            use_attn = (now_res in attn_res)
+            channel_mult = inner_channel * channel_mults[ind]
+            for _ in range(0, res_blocks + 1):
+                ups.append(ResnetBlocWithAttn(
+                    pre_channel + feat_channels.pop(), channel_mult,
+                    norm_groups=norm_groups,
+                    dropout=dropout, with_attn=use_attn))
+                pre_channel = channel_mult
+            if not is_last:
+
+                ups.append(Upsample(pre_channel))
+   
+
+        ups.append(PositionAttention(pre_channel))
+        self.ups = nn.ModuleList(ups)
+        self.final_conv = Block(pre_channel, default(out_channel, in_channel), groups=norm_groups)
+
+
+
+
+    def forward(self, x):
+        feats = []
+        for idx in range(len(self.downs)):
+            layer = self.downs[idx]
+            if isinstance(layer,OrientationAttention):
+                x = layer(x)
+            else :
+                x = layer(x)
+                feats.append(x)
+
+        for layer in self.mid:
+            x = layer(x)
+
+        for layer in self.ups:
+            # print(x.shape)
+            if isinstance(layer, ResnetBlocWithAttn):
+                x = layer(torch.cat((x, feats.pop()), dim=1))
+            else:
+                x = layer(x)
+
+        return self.final_conv(x)
 
 
 
