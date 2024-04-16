@@ -272,7 +272,7 @@ class UPAMNet(nn.Module):
 
 
                 feat_channels.append(pre_channel)
-
+                now_res = now_res // 2
         self.downs = nn.ModuleList(downs)
         self.mid = nn.ModuleList([
             ResnetBlocWithAttn(pre_channel, pre_channel,
@@ -296,7 +296,7 @@ class UPAMNet(nn.Module):
             if not is_last:
 
                 ups.append(Upsample(pre_channel))
-   
+                now_res = now_res * 2
 
         ups.append(PositionAttention(pre_channel))
         self.ups = nn.ModuleList(ups)
