@@ -29,13 +29,13 @@ def get_args():
 
     # =========for hyper parameters===
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--trial',type=str, default='baseline_MSE')
+    parser.add_argument('--trial',type=str, default='baseline')
     parser.add_argument('--mode', type=str, default='train',choices=['train','test','test_offline'])
     parser.add_argument('--seed',type=int,default=1)
 
     # ==========define the task==============
     parser.add_argument('--task',type=str,default='SR',choices=['SR','Denoise'])
-    parser.add_argument('--dataset_type', type=str, default='syn', choices=['syn'])
+    parser.add_argument('--dataset_type', type=str, default='syn', choices=['syn','in_vivo'])
 
     # =========for training===========
 
@@ -274,86 +274,12 @@ def train():
         message = 'RMSE_test: {loss1.ave:.5f} || PSNR_test: {loss2.ave:.5f} || SSIM_test: {loss3.ave:.5f} || LPIPS_test: {loss4.ave:.5f}'.format(loss1=rmse_log,loss2=psnr_log,loss3=ssim_log,loss4=lpips_log)
         LOGGER.info(message)
     LOGGER.info('Finish Testing')
-
-
-
-
-def test(checkpoint=''):
-    args = get_args()
-    if checkpoint:
-        args.load_model = checkpoint
-    LOGGER = ConsoleLogger('test_'+args.trial, 'test')
-    logdir = LOGGER.getLogFolder()
-    LOGGER.info(args)
-    # dataset============================================================
-    # Place your PAM dataset here
-    test_set = PA_dataset()
-    test_dataloader = DataLoader(test_set, batch_size=args.val_batchsize, shuffle=False, num_workers=16, drop_last=False)
-    LOGGER.info('Initial Dataset Finished')
-    # ====================================================================
-    model = UPAMNet(inner_channel=args.inner_channel,norm_groups=args.norm_groups,channel_mults=args.channel_mults,attn_res=args.attn_res,res_blocks=args.res_blocks)
-    LOGGER.info('Initial Model Finished')
-
-    device = torch.device(f'cuda:{args.gpu}')
-    model = model.cuda(device)
-
-    if args.load_model:
-        model_path = args.load_model
-        if not os.path.isfile(model_path):
-            raise FileNotFoundError(f"No checkpoint found at {model_path}")
-        checkpoint = torch.load(model_path)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        LOGGER.info(f'---------------Finishing loading models----------------')
-
-    rmse_log = AverageMeter()
-    psnr_log = AverageMeter()
-    ssim_log = AverageMeter()
-    lpips_log = AverageMeter()
-    loss_lpips = lpips.LPIPS(net='alex').cuda(device)
-    with torch.no_grad():
-        model.eval()
-        for it, batch in enumerate(test_dataloader, 0):
-            rgb = batch['input'].to(torch.float32).cuda(device)
-            gt = batch['gt'].to(torch.float32).cuda(device)
-            down = batch['down'].to(torch.float32).cuda(device)
-            batch_size = len(rgb)
-            minmax = np.array([batch['d_min'].numpy(), batch['d_max'].numpy()]).T
-            # =========feed into the network=========================
-            output = rgb + model(rgb)
-            for idx in range(len(output)):
-                rmse = calc_rmse(output[idx, 0].cpu().numpy(), gt[idx, 0].cpu().numpy(),  minmax[idx])
-                rmse_log.update(rmse, 1)
-                rmse = calc_rmse(output[idx, 0].cpu().numpy(), gt[idx, 0].cpu().numpy(), minmax[idx])
-                rmse_log.update(rmse, 1)
-                psnr = calc_psnr(output[idx, 0].cpu().numpy(), gt[idx, 0].cpu().numpy(), minmax[idx])
-                psnr_log.update(psnr, 1)
-                ssim = calc_ssim(output[idx, 0].cpu().numpy(), gt[idx, 0].cpu().numpy(), minmax[idx])
-                ssim_log.update(ssim, 1)
-
-            output_exp = output.expand(len(output), 3, rgb.shape[2], rgb.shape[3])
-            output_exp = torch.clip(output_exp, -1, 1)
-            gt_exp = gt.expand(len(gt), 3, rgb.shape[2], rgb.shape[3])
-            gt_exp = torch.clip(gt_exp, -1, 1)
-            lpips_error = loss_lpips(output_exp, gt_exp)
-            lpips_log.update(lpips_error.cpu().numpy().mean(), len(output_exp))
-
-        message = 'RMSE_test: {loss1.ave:.5f} || PSNR_test: {loss2.ave:.5f} || SSIM_test: {loss3.ave:.5f} || LPIPS_test: {loss4.ave:.5f}'.format(
-            loss1=rmse_log, loss2=psnr_log, loss3=ssim_log, loss4=lpips_log)
-        LOGGER.info(message)
-        LOGGER.info('Fininshing.')
-
-
-
-
-
-
+    
 if __name__ == "__main__":
     args = get_args()
 
     if args.mode == 'train':
         train()
-    if args.mode == 'test':
-        test()
 
 
 #
