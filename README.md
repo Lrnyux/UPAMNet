@@ -15,13 +15,14 @@ Due to data licence, related datasets can be downloaded from the following three
 ## Citation
 Please cite our work if you find this work useful for your research.
 ```latex
-@article{Liuupamnet2023,
-author = {Yuxuan Liu, Jiasheng Zhou, Yating Luo, Jinkai Li, Sung-Liang Chen, Yao Guo and Guang-Zhong Yang},
-title = {UPAMNet: A Unified Network with Deep Knowledge Priors for Photoacoustic Microscopy},
-year = {},
-month = {},
-url = {https://ssrn.com/abstract=4713099 },
-doi = {http://dx.doi.org/10.2139/ssrn.4713099},
- } 
+@article{LIU2024100608,
+title = {UPAMNet: A unified network with deep knowledge priors for photoacoustic microscopy},
+journal = {Photoacoustics},
+volume = {38},
+pages = {100608},
+year = {2024},
+issn = {2213-5979},
+author = {Yuxuan Liu and Jiasheng Zhou and Yating Luo and Jinkai Li and Sung-Liang Chen and Yao Guo and Guang-Zhong Yang},
+}
   
 ```
